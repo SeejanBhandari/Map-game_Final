@@ -1,0 +1,262 @@
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Map_4</title>
+  <style>
+    :root{--bg:#0b1220;--card:#0f1724;--accent:#00d1b2;--muted:#9aa7b2;}
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial}
+    body{background:linear-gradient(180deg,#071018 0%, #071827 100%);color:#e6f2f1;display:flex;align-items:center;justify-content:center}
+    .app{width:100%;max-width:1000px;padding:24px}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+    h1{margin:0;font-size:18px;letter-spacing:0.6px}
+    .mapping{display:flex;gap:8px;flex-wrap:wrap}
+    .keypair{background:rgba(255,255,255,0.04);padding:8px 10px;border-radius:10px;font-size:14px;color:var(--muted);display:flex;gap:8px;align-items:center}
+    .key{background:rgba(255,255,255,0.06);padding:6px 8px;border-radius:6px;font-weight:700;color:var(--accent)}
+
+    .stage{background:rgba(255,255,255,0.02);border-radius:14px;padding:40px;min-height:420px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden}
+
+    .name-card{font-size:86px;font-weight:800;letter-spacing:2px;text-align:center;transform:translateY(20px);opacity:0;transition:transform 420ms cubic-bezier(.2,.9,.2,1),opacity 420ms}
+    .name-card.show{transform:translateY(0);opacity:1}
+    .hint{position:absolute;bottom:18px;left:18px;color:var(--muted);font-size:14px}
+    .timer{position:absolute;top:18px;right:18px;color:var(--muted);font-size:16px}
+
+    .controls{display:flex;gap:8px;justify-content:center;margin-top:14px}
+    button{background:var(--accent);border:0;padding:10px 14px;border-radius:10px;color:#042423;font-weight:700;cursor:pointer}
+    button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
+
+    .overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(2,6,12,0.6)}
+    .overlay.show{display:flex}
+    .modal{background:var(--card);padding:26px;border-radius:12px;min-width:320px;max-width:90%;color:#eaf6f3}
+    .modal h2{margin-top:0}
+    input[type=text]{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:inherit;margin-bottom:10px}
+
+    footer{margin-top:12px;color:var(--muted);font-size:13px;text-align:center}
+
+    @media (max-width:600px){.name-card{font-size:44px;padding:0 6px}}
+  </style>
+</head>
+<body>
+  <div class="app" role="application" aria-label="MAP_4">
+    <header>
+      <div class="mapping" id="mapping" aria-hidden="true"></div>
+    </header><br>
+      <center><font size="7">Cities</font></center>
+
+    <main class="stage" id="stage">
+      <div class="timer" id="timer">00:00.000</div>
+      <div class="name-card" id="nameCard" aria-live="polite"></div>
+      <div class="hint" id="hint">Press the assigned key to go to the next name</div>
+    </main>
+
+    <div class="controls">
+      <button id="restartBtn" class="ghost">Restart</button>
+      <button id="showOrderBtn">Show Current Order</button>
+      <button style="background:var(--accent);border:0;padding:10px 14px;border-radius:10px;color:#042423;font-weight:700;cursor:pointer"><a href="index.html">Go back</a></button>
+    </div>
+  </div>
+
+  <!-- Completion modal -->
+  <div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal" id="modal">
+      <h2>Mission Complete 🎉</h2>
+      <p id="finalTimeText">Time: 00:00.000</p>
+      <label for="playerName">Name this run:</label>
+      <input id="playerName" type="text" placeholder="Enter your name or initials">
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button id="downloadBtn">Save as .txt</button>
+        <button id="closeModal" class="ghost">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      // Configuration
+      const names = [
+        "Beni",
+        "Butwal",
+        "Nepalgunj",
+        "Hetauda",
+        "Gaighat",
+        "Birendranagar",
+        "Limi",
+      ];
+      // Fixed special keys assigned to the seven names (lowercase). You can change these keys.
+      const specialKeys = ['h','b','v','c','z','k','9'];
+
+      // State
+      let mapping = {}; // name -> key
+      let order = [];
+      let index = 0;
+      let startTime = null;
+      let timerInterval = null;
+      let finished = false;
+
+      // Elements
+      const nameCard = document.getElementById('nameCard');
+      const mappingEl = document.getElementById('mapping');
+      const timerEl = document.getElementById('timer');
+      const hintEl = document.getElementById('hint');
+      const overlay = document.getElementById('overlay');
+      const modal = document.getElementById('modal');
+      const finalTimeText = document.getElementById('finalTimeText');
+      const playerNameInput = document.getElementById('playerName');
+      const downloadBtn = document.getElementById('downloadBtn');
+      const closeModal = document.getElementById('closeModal');
+      const restartBtn = document.getElementById('restartBtn');
+      const showOrderBtn = document.getElementById('showOrderBtn');
+
+      // Initialize mapping (name -> key)
+      function initMapping(){
+        mapping = {};
+        for(let i=0;i<names.length;i++){
+          mapping[names[i]] = specialKeys[i] || ('key'+(i+1));
+        }
+        renderMapping();
+      }
+
+      function renderMapping(){
+        mappingEl.innerHTML = '';
+        for(const n of names){
+          const kp = document.createElement('div');
+          kp.className = 'keypair';
+          const k = document.createElement('div'); k.className='key'; k.textContent = mapping[n].toUpperCase();
+          const txt = document.createElement('div'); txt.textContent = n;
+          kp.append(k,txt);
+          mappingEl.appendChild(kp);
+        }
+      }
+           
+      // Fisher-Yates shuffle
+      function shuffle(arr){
+        const a = arr.slice();
+        for(let i=a.length-1;i>0;i--){
+          const j = Math.floor(Math.random()*(i+1));
+          [a[i],a[j]]=[a[j],a[i]];
+        }
+        return a;
+      }
+
+      function startPresentation(){
+        finished = false;
+        index = 0;
+        order = shuffle(names);
+        // Start timer immediately
+        startTimer();
+        showCurrent();
+      }
+       function showCurrent(){
+        if(index >= order.length){
+          completePresentation();
+          return;
+        }
+        const current = order[index];
+        nameCard.textContent = current;
+        nameCard.classList.remove('show');
+        // force reflow before adding class to trigger transition
+        void nameCard.offsetWidth;
+        nameCard.classList.add('show');
+        hintEl.textContent = `Press [${mapping[current].toUpperCase()}] to continue`;
+      }
+
+
+      function onKeyPress(e){
+        if(finished) return;
+        const key = (e.key || '').toLowerCase();
+        const current = order[index];
+        if(!current) return;
+        const expected = mapping[current].toLowerCase();
+        if(key === expected){
+          // correct key pressed -> next
+          index++;
+          if(index < order.length){
+            showCurrent();
+          } else {
+            completePresentation();
+          }
+        } else {
+          // Optional: provide subtle feedback
+          shakeHint();
+        }
+      }
+
+      function shakeHint(){
+        hintEl.animate([
+          {transform:'translateX(0)'},
+          {transform:'translateX(-8px)'},
+          {transform:'translateX(8px)'},
+          {transform:'translateX(0)'}
+        ],{duration:320,iterations:1});
+      }
+
+      function startTimer(){
+        startTime = performance.now();
+        if(timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(()=>{
+          timerEl.textContent = formatTime(performance.now()-startTime);
+        }, 33);
+      }
+
+      function stopTimer(){
+        if(timerInterval) clearInterval(timerInterval);
+        timerInterval = null;
+      }
+
+      function formatTime(ms){
+        const total = Math.floor(ms);
+        const minutes = Math.floor(total/60000);
+        const seconds = Math.floor((total%60000)/1000);
+        const millis = total % 1000;
+        return `${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}.${String(millis).padStart(3,'0')}`;
+      }
+
+      function completePresentation(){
+        finished = true;
+        stopTimer();
+        const elapsed = performance.now() - startTime;
+        finalTimeText.textContent = 'Time: ' + formatTime(elapsed);
+        overlay.classList.add('show');
+        overlay.setAttribute('aria-hidden','false');
+        // focus input
+        setTimeout(()=>playerNameInput.focus(),120);
+      }
+
+      // Save result to a .txt file and trigger download
+      function saveResult(){
+        const player = (playerNameInput.value || 'Anonymous').replace(/\n/g,' ');
+        const time = timerEl.textContent || finalTimeText.textContent.replace('Time: ','');
+        const date = new Date().toLocaleString();
+        const line = `${player} - ${time} - ${date}\n`;
+        // create a blob and download
+        const blob = new Blob([line],{type:'text/plain'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'Map4_results.txt';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        // close modal
+        overlay.classList.remove('show');
+        overlay.setAttribute('aria-hidden','true');
+      }
+
+      // UI Hooks
+      downloadBtn.addEventListener('click', saveResult);
+      closeModal.addEventListener('click', ()=>{ overlay.classList.remove('show'); overlay.setAttribute('aria-hidden','true'); });
+      restartBtn.addEventListener('click', ()=>{ startPresentation(); });
+      showOrderBtn.addEventListener('click', ()=>{ alert('Current order:\n' + order.join('\n')); });
+
+      // keyboard
+      window.addEventListener('keydown', onKeyPress);
+
+      // init
+      initMapping();
+      startPresentation();
+
+    })();
+  </script>
+</body>
+</html>

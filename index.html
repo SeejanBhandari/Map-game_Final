@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Home Page</title>
+    <link rel="stylesheet" href="file1.css">
+
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow-x: hidden;
+            font-family: "Poppins", sans-serif;
+            color: #fff;
+        }
+
+        /* Background Video */
+        #vdo {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -2;
+        }
+
+        /* Dark Overlay */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.55);
+            backdrop-filter: blur(1px);
+            z-index: -1;
+        }
+
+        /* Main Container */
+        .container {
+            width: 75%;
+            margin: 60px auto;
+            padding: 30px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(1px);
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            animation: fadeIn 1.5s ease forwards;
+        }
+
+        /* Title */
+        h1 {
+            text-align: center;
+            font-size: 40px;
+            margin-bottom: 25px;
+            text-shadow: 0 0 12px #00eaff;
+            letter-spacing: 3px;
+        }
+
+        /* Section Titles */
+        .map-title {
+            font-size: 22px;
+            margin-top: 25px;
+            text-shadow: 0 0 10px #00c3ff;
+        }
+
+        /* Dropdown */
+        select {
+            width: 60%;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 10px;
+            border: none;
+            font-size: 15px;
+            outline: none;
+        }
+
+        /* Buttons */
+        .btn {
+            margin-top: 15px;
+            padding: 12px 22px;
+            background: #00b7ff;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 17px;
+            color: black;
+            font-weight: 700;
+            text-shadow: none;
+        }
+
+        .btn:hover {
+            background: #0099d6;
+            transform: scale(1.05);
+            box-shadow: 0 0 15px #00c3ff;
+        }
+
+        .btn a {
+            text-decoration: none;
+            color: black;
+        }
+
+        /* Fade Animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Shortcut Popup */
+        .shortcut-popup {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            background: rgba(0, 255, 175, 0.3);
+            border: 1px solid #00ffbf;
+            border-radius: 10px;
+            backdrop-filter: blur(8px);
+            font-size: 16px;
+            display: none;
+            animation: popupFade 1s ease;
+            color: #fff;
+        }
+
+        @keyframes popupFade {
+            0% { opacity: 0; transform: translateY(-15px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <video id="vdo" autoplay muted loop>
+        <source src="bg.mp4" type="video/mp4">
+    </video>
+
+    <div class="overlay"></div>
+
+    <div class="container">
+        <h1>WELCOME</h1>
+        <p style="text-align:center; font-size:18px;">Choose which map you want to explore:</p>
+
+        <!-- MAP 1 -->
+        <p class="map-title">1. Easy Level</p>
+        <select>
+            <option>Chure Hill Rang</option>
+            <option>Langtang NP</option>
+            <option>Manakamana</option>
+            <option>Damodar Kunda</option>
+            <option>Narayani River</option>
+            <option>Sey-Phoksundo Lake</option> 
+        </select><br>
+        <button class="btn"><a href="Page1.html">Play Map</a></button>
+
+        <!-- MAP 2 -->
+        <p class="map-title">2. Hard Level</p>
+        <select>
+            <option>Chamlang Peak</option>
+            <option>Bardibas</option>
+            <option>Budhi Gandaki</option>
+            <option>Lugala Mountain</option>
+            <option>West Rapti River</option>
+            <option>Bhimdatta Highway</option>
+        </select><br>
+        <button class="btn"><a href="Page2.html">Play Map</a></button>
+
+        <!-- MAP 3 -->
+        <p class="map-title">3. National Parks</p>
+        <select>
+            <option>Khaptad NP</option>
+            <option>Chitwan NP</option>
+            <option>Gaurishankar CA</option>
+            <option>Annapurna CA</option>
+            <option>Shivapuri NP</option>
+            <option>MakaluBarun NP</option>
+            <option>Sey-Phoksundo NP</option>
+        </select><br>
+        <button class="btn"><a href="Page3.html">Play Map</a></button>
+
+        <!-- MAP 4 -->
+        <p class="map-title">4. Random Places</p>
+        <select>
+            <option>Beni</option>
+            <option>Butwal</option>
+            <option>Nepalgunj</option>
+            <option>Gaighat</option>
+            <option>Hetauda</option>
+            <option>Birendra Nagar</option>
+            <option>Limi</option>
+        </select><br>
+        <button class="btn"><a href="Page4.html">Play Map</a></button>
+    </div>
+
+    <div class="shortcut-popup" id="popup"></div>
+
+    <!-- Keyboard Shortcuts -->
+    <script>
+        document.addEventListener("keydown", function(event) {
+
+            const keyMap = {
+                "Digit1": "Page1.html",
+                "Numpad1": "Page1.html",
+
+                "Digit2": "Page2.html",
+                "Numpad2": "Page2.html",
+
+                "Digit3": "Page3.html",
+                "Numpad3": "Page3.html",
+
+                "Digit6": "Page4.html",
+                "Numpad6": "Page4.html"
+            };
+
+            if (keyMap[event.code]) {
+                showPopup("Loading " + keyMap[event.code] + " ...");
+                setTimeout(() => {
+                    window.location.href = keyMap[event.code];
+                }, 500);
+            }
+        });
+
+        function showPopup(text) {
+            let popup = document.getElementById("popup");
+            popup.innerText = text;
+            popup.style.display = "block";
+
+            setTimeout(() => {
+                popup.style.display = "none";
+            }, 1500);
+        }
+    </script>
+
+</body>
+</html>
